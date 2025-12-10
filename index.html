@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hello Vibe Coding</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    :root {
+      color-scheme: dark;
+      --surface: rgba(255, 255, 255, 0.04);
+      --border: rgba(255, 255, 255, 0.12);
+      --text: #eef0f7;
+      --muted: rgba(238, 240, 247, 0.75);
+      --accent-1: #9b8bff;
+      --accent-2: #63e4ff;
+      --accent-3: #ff8bdb;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(140% 140% at 20% 20%, rgba(88, 120, 255, 0.15), transparent 55%),
+        radial-gradient(120% 120% at 80% 15%, rgba(255, 139, 219, 0.18), transparent 52%),
+        linear-gradient(135deg, #050714 0%, #0a0d1f 45%, #050814 100%);
+      color: var(--text);
+      font-family: "Space Grotesk", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(120deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0) 40%),
+        linear-gradient(300deg, rgba(255, 255, 255, 0.03) 20%, rgba(255, 255, 255, 0) 60%);
+      pointer-events: none;
+    }
+
+    main {
+      position: relative;
+      z-index: 1;
+      width: min(1080px, 92vw);
+      padding: clamp(22px, 3vw, 32px);
+    }
+
+    .bg-grid {
+      position: fixed;
+      inset: -10vh;
+      background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 52px 52px;
+      mask-image: radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 0.7), transparent 60%);
+      opacity: 0.4;
+      z-index: 0;
+    }
+
+    .orb {
+      position: fixed;
+      width: 520px;
+      height: 520px;
+      border-radius: 50%;
+      filter: blur(110px);
+      opacity: 0.65;
+      z-index: 0;
+      animation: float 12s ease-in-out infinite alternate;
+    }
+
+    .orb.one {
+      background: radial-gradient(circle, rgba(155, 139, 255, 0.9), transparent 55%);
+      top: -120px;
+      left: -120px;
+    }
+
+    .orb.two {
+      background: radial-gradient(circle, rgba(99, 228, 255, 0.9), transparent 55%);
+      bottom: -140px;
+      right: -90px;
+      animation-duration: 16s;
+      animation-delay: -2s;
+    }
+
+    @keyframes float {
+      to {
+        transform: translate3d(12px, -18px, 0);
+      }
+    }
+
+    .hero {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 18px;
+      text-align: left;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: linear-gradient(120deg, rgba(155, 139, 255, 0.16), rgba(99, 228, 255, 0.14));
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      font-size: 13px;
+      letter-spacing: 0.02em;
+      color: var(--text);
+      width: fit-content;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(40px, 6vw, 64px);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      font-weight: 700;
+      text-shadow: 0 10px 35px rgba(0, 0, 0, 0.4);
+    }
+
+    .subhead {
+      margin: 0;
+      color: var(--muted);
+      font-size: 17px;
+      max-width: 740px;
+      line-height: 1.6;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .chip {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .card {
+      position: relative;
+      padding: clamp(22px, 3vw, 32px);
+      border-radius: 22px;
+      backdrop-filter: blur(16px);
+      background: linear-gradient(140deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow:
+        0 30px 80px rgba(0, 0, 0, 0.55),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 20% 20%, rgba(155, 139, 255, 0.12), transparent 35%),
+        radial-gradient(circle at 80% 0%, rgba(99, 228, 255, 0.12), transparent 30%);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .card-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--accent-2);
+      box-shadow: 0 0 12px rgba(99, 228, 255, 0.6);
+    }
+
+    .panel {
+      margin-top: 8px;
+      padding: 16px;
+      border-radius: 16px;
+      background: rgba(8, 10, 22, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: grid;
+      gap: 12px;
+      text-align: left;
+    }
+
+    label {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    input,
+    textarea,
+    button {
+      font-family: inherit;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 14px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      background: rgba(10, 12, 22, 0.7);
+      color: var(--text);
+      outline: none;
+      transition: border 0.15s ease, box-shadow 0.2s ease;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent-2);
+      box-shadow: 0 0 0 3px rgba(99, 228, 255, 0.2);
+    }
+
+    .chat {
+      margin-top: 8px;
+      max-height: 42vh;
+      min-height: 180px;
+      overflow: auto;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      display: grid;
+      gap: 10px;
+    }
+
+    .bubble {
+      padding: 12px 14px;
+      border-radius: 14px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      position: relative;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .bubble::after {
+      content: "";
+      position: absolute;
+      inset: -30%;
+      background: radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.08), transparent 45%);
+      opacity: 0.8;
+      pointer-events: none;
+    }
+
+    .user {
+      background: linear-gradient(135deg, rgba(155, 139, 255, 0.22), rgba(99, 228, 255, 0.12));
+      border: 1px solid rgba(155, 139, 255, 0.35);
+      box-shadow: 0 10px 30px rgba(155, 139, 255, 0.18);
+    }
+
+    .bot {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    form {
+      margin-top: 14px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    textarea {
+      flex: 1 1 260px;
+      min-height: 110px;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(10, 12, 22, 0.75);
+      color: var(--text);
+      resize: vertical;
+      outline: none;
+      transition: border 0.15s ease, box-shadow 0.2s ease;
+    }
+
+    textarea:focus {
+      border-color: var(--accent-1);
+      box-shadow: 0 0 0 3px rgba(155, 139, 255, 0.2);
+    }
+
+    button {
+      align-self: flex-end;
+      padding: 16px 18px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+      color: #040712;
+      font-weight: 700;
+      cursor: pointer;
+      min-width: 140px;
+      transition: transform 0.1s ease, box-shadow 0.15s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.18), transparent 45%);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 18px 40px rgba(99, 228, 255, 0.28);
+    }
+
+    button:hover::after {
+      opacity: 1;
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .status {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      min-height: 18px;
+    }
+
+    .error {
+      color: #ff9da4;
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.18);
+      border-radius: 999px;
+    }
+
+    @media (max-width: 640px) {
+      .card {
+        padding: 18px;
+      }
+
+      form {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="orb one" aria-hidden="true"></div>
+  <div class="orb two" aria-hidden="true"></div>
+
+  <main>
+    <div class="hero">
+      <div class="eyebrow">
+        <span class="dot"></span>
+        Vibe Studio · Live Gemini Playground
+      </div>
+      <h1>빛나는 AI와 대화해보세요.</h1>
+      <p class="subhead">
+        반짝이는 네온 무드 속에서 Gemini 2.5 Flash와 실시간으로 대화하세요. API 키는 브라우저에만 저장되어
+        안전합니다.
+      </p>
+      <div class="tags">
+        <span class="chip">Gemini 2.5 Flash</span>
+        <span class="chip">실시간 생성</span>
+        <span class="chip">Glassmorphism UI</span>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="card-head">
+        <div class="pill"><span class="dot"></span> Ready to chat</div>
+        <div class="pill">키는 브라우저 로컬에만 저장됩니다</div>
+      </div>
+      <div class="panel">
+        <label for="apiKey">Google API Key</label>
+        <input id="apiKey" type="text" placeholder="예: AIza..." autocomplete="off" />
+        <div class="chat" id="chat" aria-live="polite" aria-label="Chat messages"></div>
+        <form id="promptForm">
+          <textarea id="prompt" placeholder="무엇이든 물어보세요..." required></textarea>
+          <button type="submit" id="sendBtn">Send</button>
+        </form>
+        <div class="status" id="status"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini2.5-flash:generateContent";
+    const chatEl = document.getElementById("chat");
+    const promptEl = document.getElementById("prompt");
+    const formEl = document.getElementById("promptForm");
+    const statusEl = document.getElementById("status");
+    const sendBtn = document.getElementById("sendBtn");
+    const apiKeyEl = document.getElementById("apiKey");
+
+    // Load stored key on start
+    apiKeyEl.value = localStorage.getItem("gemini_api_key") || "";
+
+    apiKeyEl.addEventListener("change", () => {
+      localStorage.setItem("gemini_api_key", apiKeyEl.value.trim());
+    });
+
+    function addMessage(text, role) {
+      const div = document.createElement("div");
+      div.className = `bubble ${role}`;
+      div.textContent = text;
+      chatEl.appendChild(div);
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
+
+    async function callGemini(prompt) {
+      const apiKey = apiKeyEl.value.trim();
+      if (!apiKey) {
+        throw new Error("먼저 Google API 키를 입력하세요.");
+      }
+
+      const body = {
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7 }
+      };
+
+      const res = await fetch(`${API_URL}?key=${encodeURIComponent(apiKey)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`API 오류 (${res.status}): ${errorText}`);
+      }
+
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) {
+        throw new Error("응답을 읽을 수 없습니다.");
+      }
+      return text;
+    }
+
+    formEl.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const prompt = promptEl.value.trim();
+      if (!prompt) return;
+
+      addMessage(prompt, "user");
+      promptEl.value = "";
+      statusEl.textContent = "생성 중...";
+      statusEl.classList.remove("error");
+      sendBtn.disabled = true;
+      promptEl.disabled = true;
+
+      try {
+        const reply = await callGemini(prompt);
+        addMessage(reply, "bot");
+        statusEl.textContent = "완료";
+      } catch (err) {
+        statusEl.textContent = err.message;
+        statusEl.classList.add("error");
+      } finally {
+        sendBtn.disabled = false;
+        promptEl.disabled = false;
+        promptEl.focus();
+      }
+    });
+  </script>
+</body>
+</html>
