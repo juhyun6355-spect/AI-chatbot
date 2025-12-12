@@ -1,0 +1,11 @@
+# Windows system artifacts
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS metadata that can appear on shared drives
+.DS_Store
+
+# Environment files
+.env
