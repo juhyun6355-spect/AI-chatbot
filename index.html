@@ -3,17 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hello Vibe Coding</title>
+  <title>Gemini Chat · Vibe</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
       color-scheme: dark;
       --bg-start: #0f1624;
-      --bg-end: #1f2a44;
+      --bg-end: #111927;
+      --panel: rgba(255, 255, 255, 0.04);
+      --border: rgba(255, 255, 255, 0.08);
       --accent: #6ce0ff;
-      --glow: rgba(108, 224, 255, 0.5);
+      --accent-2: #a578ff;
+      --text: #e9eef8;
+      --muted: #9fb2c8;
     }
 
     * {
@@ -25,68 +29,258 @@
       min-height: 100vh;
       display: grid;
       place-items: center;
-      background: radial-gradient(circle at 20% 20%, rgba(108, 224, 255, 0.12), transparent 25%),
-                  radial-gradient(circle at 80% 80%, rgba(165, 120, 255, 0.14), transparent 30%),
-                  linear-gradient(145deg, var(--bg-start), var(--bg-end));
-      color: #e8eef9;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(108, 224, 255, 0.12), transparent 25%),
+        radial-gradient(circle at 80% 80%, rgba(165, 120, 255, 0.12), transparent 30%),
+        linear-gradient(145deg, var(--bg-start), var(--bg-end));
+      color: var(--text);
       font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      padding: 32px 20px;
+    }
+
+    .shell {
+      width: min(900px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow:
+        0 20px 50px rgba(0, 0, 0, 0.45),
+        0 0 50px rgba(108, 224, 255, 0.25);
+      backdrop-filter: blur(12px);
       overflow: hidden;
     }
 
-    .card {
-      position: relative;
-      padding: 48px 72px;
-      border-radius: 18px;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow:
-        0 20px 50px rgba(0, 0, 0, 0.45),
-        0 0 50px var(--glow);
-      backdrop-filter: blur(12px);
-      text-align: center;
-    }
-
-    .card::before {
-      content: '';
-      position: absolute;
-      inset: -1px;
-      border-radius: 20px;
-      background: linear-gradient(120deg, rgba(108, 224, 255, 0.5), rgba(165, 120, 255, 0.35));
-      filter: blur(25px);
-      opacity: 0.45;
-      z-index: -1;
+    header {
+      padding: 28px 28px 12px;
+      border-bottom: 1px solid var(--border);
     }
 
     h1 {
-      margin: 0;
-      font-size: clamp(32px, 4vw, 56px);
+      margin: 0 0 6px;
+      font-size: 28px;
       font-weight: 600;
       letter-spacing: 0.02em;
-      text-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
     }
 
-    h1 span {
-      position: relative;
-      display: inline-block;
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
     }
 
-    h1 span::after {
-      content: '';
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: -6px;
-      height: 3px;
+    .controls {
+      display: grid;
+      gap: 12px;
+      padding: 16px 28px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    label {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    input[type="password"],
+    textarea {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text);
+      padding: 12px 14px;
+      font: 15px 'Inter', sans-serif;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input[type="password"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: rgba(108, 224, 255, 0.6);
+      box-shadow: 0 0 0 3px rgba(108, 224, 255, 0.15);
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font: 15px 'Inter', sans-serif;
+      cursor: pointer;
+      background: linear-gradient(120deg, var(--accent), var(--accent-2));
+      color: #0b0f16;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(108, 224, 255, 0.35);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 30px rgba(108, 224, 255, 0.4);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .output {
+      padding: 20px 28px 32px;
+    }
+
+    .bubble {
+      padding: 16px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.02);
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 80px;
+    }
+
+    .status {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
       border-radius: 999px;
-      background: linear-gradient(90deg, rgba(108, 224, 255, 0.8), rgba(165, 120, 255, 0.8));
-      opacity: 0.9;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .pill strong {
+      color: var(--text);
+      font-weight: 600;
     }
   </style>
 </head>
 <body>
-  <div class="card" role="presentation">
-    <h1><span>Hello Vibe Coding</span></h1>
+  <div class="shell">
+    <header>
+      <h1>Gemini Chat · Vibe</h1>
+      <p class="subtitle">Google Gemini API (gemini2.5-flash:generateContent)와 통신하는 단일 HTML 데모</p>
+    </header>
+
+    <section class="controls">
+      <div>
+        <label for="apiKey">Google API Key (로컬에만 저장됨)</label>
+        <input type="password" id="apiKey" placeholder="AIza..." autocomplete="off">
+      </div>
+      <div>
+        <label for="prompt">메시지 입력</label>
+        <textarea id="prompt" placeholder="무엇을 도와드릴까요?"></textarea>
+      </div>
+      <div class="actions">
+        <button id="sendBtn">Send to Gemini</button>
+      </div>
+      <div class="pill">
+        <span>엔드포인트:</span>
+        <strong>gemini2.5-flash:generateContent</strong>
+      </div>
+    </section>
+
+    <section class="output">
+      <div class="bubble" id="responseBubble">여기에 응답이 표시됩니다.</div>
+      <div class="status" id="statusText">준비 완료</div>
+    </section>
   </div>
+
+  <script>
+    const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini2.5-flash:generateContent';
+    const apiKeyInput = document.getElementById('apiKey');
+    const promptInput = document.getElementById('prompt');
+    const sendBtn = document.getElementById('sendBtn');
+    const bubble = document.getElementById('responseBubble');
+    const statusText = document.getElementById('statusText');
+
+    // Restore API key locally if previously saved
+    apiKeyInput.value = localStorage.getItem('gemini_api_key') || '';
+
+    function setStatus(message) {
+      statusText.textContent = message;
+    }
+
+    function setLoading(isLoading) {
+      sendBtn.disabled = isLoading;
+      sendBtn.textContent = isLoading ? 'Requesting…' : 'Send to Gemini';
+    }
+
+    async function callGemini(prompt) {
+      const apiKey = apiKeyInput.value.trim();
+      if (!apiKey) {
+        alert('API 키를 입력하세요.');
+        return;
+      }
+      if (!prompt.trim()) {
+        alert('메시지를 입력하세요.');
+        return;
+      }
+
+      // Save locally for convenience; never sent anywhere else.
+      localStorage.setItem('gemini_api_key', apiKey);
+
+      setLoading(true);
+      setStatus('요청 중...');
+      bubble.textContent = '생각 중...';
+
+      try {
+        const res = await fetch(\`\${ENDPOINT}?key=\${encodeURIComponent(apiKey)}\`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }]
+          })
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(\`HTTP \${res.status}: \${errText}\`);
+        }
+
+        const data = await res.json();
+        const parts = data?.candidates?.[0]?.content?.parts || [];
+        const text = parts.map(p => p.text).filter(Boolean).join('\n').trim();
+        bubble.textContent = text || '응답을 받을 수 없었습니다.';
+        setStatus('완료');
+      } catch (err) {
+        console.error(err);
+        bubble.textContent = '오류 발생: ' + err.message;
+        setStatus('실패');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    sendBtn.addEventListener('click', () => {
+      callGemini(promptInput.value);
+    });
+
+    promptInput.addEventListener('keydown', (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        callGemini(promptInput.value);
+      }
+    });
+  </script>
 </body>
 </html>
-
