@@ -207,7 +207,8 @@
   </div>
 
   <script>
-    const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini2.5-flash:generateContent';
+    const MODEL_ID = 'gemini-1.5-flash'; // gemini2.5-flash not available on v1beta
+    const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent`;
     const apiKeyInput = document.getElementById('apiKey');
     const promptInput = document.getElementById('prompt');
     const sendBtn = document.getElementById('sendBtn');

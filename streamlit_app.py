@@ -4,7 +4,8 @@ import requests
 import streamlit as st
 
 # Configuration
-API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini2.5-flash:generateContent"
+MODEL_ID = "gemini-1.5-flash"  # 2.5 is not available on v1beta; use v1.5 flash
+API_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL_ID}:generateContent"
 
 st.set_page_config(page_title="Gemini Chat · Streamlit", page_icon="💬", layout="centered")
 
