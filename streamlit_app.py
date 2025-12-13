@@ -420,10 +420,15 @@ with tab1:
     df_expense = get_expenses_db(st.session_state.username)
     df_income = get_income_db(st.session_state.username)
     
-    # 컬럼명 안전하게 통일 (price -> 금액)
-    if 'price' in df_expense.columns:
-        df_expense = df_expense.rename(columns={'price': '금액'})
+    # 1. 컬럼 이름 확인 및 강제 통일
+    column_map = {
+        'price': '금액', 'amount': '금액', 'cost': '금액',
+        'category': '종류', 
+        'type': '유형'
+    }
+    df_expense = df_expense.rename(columns=column_map)
     
+    # 2. 빈 데이터 방어 로직
     if not df_expense.empty:
         col_chart1, col_chart2 = st.columns(2)
         
@@ -438,7 +443,7 @@ with tab1:
             st.plotly_chart(fig2, use_container_width=True)
             
         st.markdown("#### 📋 지출 내역")
-        st.dataframe(df_expense[['date', 'item', '금액', 'category', 'type']], use_container_width=True)
+        st.dataframe(df_expense[['date', 'item', '금액', '종류', '유형']], use_container_width=True)
     else:
         st.info("아직 지출 기록이 없어요! 첫 기록을 남겨보세요. 🎈")
         
