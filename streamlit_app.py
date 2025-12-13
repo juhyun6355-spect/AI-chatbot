@@ -50,6 +50,10 @@ def init_db():
     try:
         c.execute("ALTER TABLE users ADD COLUMN xp INTEGER DEFAULT 0")
     except sqlite3.OperationalError: pass
+    
+    try:
+        c.execute("ALTER TABLE users ADD COLUMN points INTEGER DEFAULT 0")
+    except sqlite3.OperationalError: pass
 
     conn.commit()
     conn.close()
@@ -71,21 +75,22 @@ def login_user(username, pin):
         conn.close()
         return True, "새로운 친구 환영해요! 가입이 완료되었어요!"
 
-def update_user_activity(username):
-    """활동 기록 시 스트릭(연속일수)과 경험치 업데이트"""
+def update_user_activity(username, xp_gain=10, points_gain=10):
+    """활동 기록 시 스트릭, 경험치, 포인트 업데이트"""
     conn = sqlite3.connect('money_manager.db')
     c = conn.cursor()
     
     # 현재 유저 정보 조회
-    c.execute('SELECT last_active_date, streak_days, xp FROM users WHERE username = ?', (username,))
+    c.execute('SELECT last_active_date, streak_days, xp, points FROM users WHERE username = ?', (username,))
     row = c.fetchone()
     
     if row:
-        last_date_str, streak, xp = row
+        last_date_str, streak, xp, points = row
         today_str = datetime.now().strftime("%Y-%m-%d")
         
-        # 경험치 증가 (기록당 10XP)
-        new_xp = (xp if xp else 0) + 10
+        # 경험치 및 포인트 증가
+        new_xp = (xp if xp else 0) + xp_gain
+        new_points = (points if points else 0) + points_gain
         
         # 스트릭 계산
         new_streak = streak if streak else 0
@@ -99,8 +104,8 @@ def update_user_activity(username):
             else:
                 new_streak = 1 # 첫 기록
         
-        c.execute('UPDATE users SET last_active_date = ?, streak_days = ?, xp = ? WHERE username = ?', 
-                  (today_str, new_streak, new_xp, username))
+        c.execute('UPDATE users SET last_active_date = ?, streak_days = ?, xp = ?, points = ? WHERE username = ?', 
+                  (today_str, new_streak, new_xp, new_points, username))
     
     conn.commit()
     conn.close()
@@ -108,10 +113,17 @@ def update_user_activity(username):
 def get_user_stats(username):
     conn = sqlite3.connect('money_manager.db')
     c = conn.cursor()
-    c.execute('SELECT streak_days, xp FROM users WHERE username = ?', (username,))
+    c.execute('SELECT streak_days, xp, points FROM users WHERE username = ?', (username,))
     result = c.fetchone()
     conn.close()
-    return result if result else (0, 0)
+    return result if result else (0, 0, 0)
+
+def get_leaderboard():
+    conn = sqlite3.connect('money_manager.db')
+    # 포인트 순으로 상위 5명 조회
+    df = pd.read_sql_query("SELECT username, xp, points FROM users ORDER BY points DESC LIMIT 5", conn)
+    conn.close()
+    return df
 
 def add_expense_db(username, date, item, price, category, type_val):
     conn = sqlite3.connect('money_manager.db')
@@ -120,7 +132,7 @@ def add_expense_db(username, date, item, price, category, type_val):
               (username, str(date), item, price, category, type_val))
     conn.commit()
     conn.close()
-    update_user_activity(username) # 활동 업데이트
+    update_user_activity(username, xp_gain=10, points_gain=10) # 활동 업데이트
 
 def get_expenses_db(username):
     conn = sqlite3.connect('money_manager.db')
@@ -135,7 +147,7 @@ def add_income_db(username, date, item, price, category):
               (username, str(date), item, price, category))
     conn.commit()
     conn.close()
-    update_user_activity(username) # 활동 업데이트
+    update_user_activity(username, xp_gain=10, points_gain=10) # 활동 업데이트
 
 def get_income_db(username):
     conn = sqlite3.connect('money_manager.db')
@@ -179,7 +191,7 @@ st.set_page_config(
 with st.sidebar:
     st.header("🎨 디자인 설정")
     st.write("나만의 테마 색깔을 골라보세요!")
-    theme_color = st.color_picker("메인 테마 색상", "#FFB6C1") # 기본값: 파스텔 핑크
+    theme_color = st.color_picker("메인 테마 색상", "#FFC0CB") # 기본값: 파스텔 핑크
 
 # --- 커스텀 CSS 및 폰트 설정 (동적 테마 적용) ---
 st.markdown(f"""
@@ -194,7 +206,7 @@ st.markdown(f"""
 
     /* 배경색: 따뜻한 크림색 */
     .stApp {{
-        background-color: #FFFDF5;
+        background-color: #F8F0FC; /* 파스텔 퍼플 배경 */
     }}
 
     /* 버튼 디자인: 둥글고 입체적인 사탕 느낌 */
@@ -258,6 +270,25 @@ st.markdown(f"""
         margin-left: 10px;
         font-size: 18px;
     }}
+
+    /* 랭킹 카드 스타일 */
+    .rank-card {{
+        background-color: white;
+        border-radius: 20px;
+        padding: 15px;
+        margin-bottom: 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        display: flex;
+        align-items: center;
+        border: 2px solid #E6E6FA;
+    }}
+    .rank-num {{
+        font-size: 24px;
+        font-weight: bold;
+        margin-right: 15px;
+        width: 40px;
+        text-align: center;
+    }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -295,42 +326,57 @@ st.title("💰 머니 매니저 (Money Manager)")
 st.markdown(f"### 🛒 **{st.session_state.username}** 친구의 똑똑한 용돈 관리")
 
 # --- 게이미피케이션 정보 (사이드바/상단) ---
-streak_days, user_xp = get_user_stats(st.session_state.username)
+streak_days, user_xp, user_points = get_user_stats(st.session_state.username)
 user_level = (user_xp // 100) + 1 # 100XP 마다 레벨업
+next_level_xp = 100 - (user_xp % 100)
 
-# 레벨별 캐릭터 및 칭호
+# 1. 내 캐릭터 키우기 (성장 시스템)
 if user_level < 3:
-    char_icon = "👶"
-    level_title = "용돈 초보"
+    char_icon = "🥚"
+    level_title = "아직은 알"
+    char_desc = "세상에 나올 준비 중이에요!"
 elif user_level < 7:
-    char_icon = "👦"
-    level_title = "저축 어린이"
+    char_icon = ""
+    level_title = "귀여운 병아리"
+    char_desc = "삐약삐약! 이제 막 돈 관리를 시작했어요!"
+elif user_level < 10:
+    char_icon = "🐓"
+    level_title = "씩씩한 닭"
+    char_desc = "꼬끼오! 스스로 용돈을 관리할 수 있어요!"
 else:
-    char_icon = "🦸"
-    level_title = "소비 마스터"
+    char_icon = "👑"
+    level_title = "황금 닭"
+    char_desc = "대단해요! 당신은 용돈 관리의 마스터!"
 
 col_info, col_logout = st.columns([4, 1])
 with col_info:
-    st.info(f"안녕? 난 너의 AI 코치야! 🤖 (Lv.{user_level} {level_title})\n오늘도 기록하러 왔구나! 참 잘했어!")
+    st.info(f"안녕? 난 너의 AI 코치야! 🤖\n오늘도 기록하러 왔구나! 참 잘했어!")
 with col_logout:
     if st.button("로그아웃 👋"):
         st.session_state.logged_in = False
         st.rerun()
 
-# 사이드바에 내 정보 표시
+# 사이드바: 캐릭터 및 성장 정보 표시
 with st.sidebar:
     st.divider()
-    st.subheader(f"내 정보 {char_icon}")
-    st.write(f"**레벨:** Lv.{user_level} ({level_title})")
-    st.progress(min((user_xp % 100) / 100, 1.0)) # 경험치 바
-    st.caption(f"다음 레벨까지 {100 - (user_xp % 100)} XP 남음")
+    st.markdown(f"<div style='text-align:center; font-size: 80px;'>{char_icon}</div>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='text-align:center;'>Lv.{user_level} {level_title}</h3>", unsafe_allow_html=True)
+    st.markdown(f"<p style='text-align:center; color:gray;'>{char_desc}</p>", unsafe_allow_html=True)
     
-    st.write(f"**연속 기록:** {streak_days}일째 🔥")
-    if streak_days >= 3:
-        st.success("불타오르고 있어요! 🔥")
+    st.write("---")
+    st.write(f"**✨ 경험치 (XP):** {user_xp}")
+    # 예쁜 프로그레스 바
+    st.markdown(f"""
+    <div style="background-color: #E0E0E0; border-radius: 10px; height: 15px; width: 100%;">
+        <div style="background-color: #FFC0CB; width: {(user_xp % 100)}%; height: 100%; border-radius: 10px;"></div>
+    </div>
+    <p style="text-align: right; font-size: 12px; color: gray;">다음 레벨까지 {next_level_xp} XP</p>
+    """, unsafe_allow_html=True)
+    
+    st.write(f"**💰 절약 포인트:** {user_points} P")
 
 # 탭 구성
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["📊 마이 데이터 보드", "🤖 AI 머니 코치", "⚖️ 소비 밸런스 게임", "🎋 내 꿈 저금통", "🏆 나의 트로피"])
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📊 마이 데이터 보드", "🤖 AI 머니 코치", "⚖️ 소비 밸런스 게임", "🎋 내 꿈 저금통", "🏆 나의 트로피", "👑 랭킹"])
 
 # --- Tab 1: 마이 데이터 보드 ---
 with tab1:
@@ -360,11 +406,11 @@ with tab1:
                 if "지출" in record_type:
                     add_expense_db(st.session_state.username, date, item, price, category, is_need)
                     st.balloons()
-                    st.success(f"💸 '{item}' 소비 기록 완료! 경험치 +10 XP 획득! ✨")
+                    st.success(f"💸 '{item}' 소비 기록 완료! 경험치 +10, 포인트 +10 획득! ✨")
                 else:
                     add_income_db(st.session_state.username, date, item, price, category)
                     st.snow() # 수입은 눈 내리는 효과 (돈이 쏟아진다!)
-                    st.success(f"💰 와! '{item}' 수입 기록 완료! 경험치 +10 XP 획득! ✨")
+                    st.success(f"💰 와! '{item}' 수입 기록 완료! 경험치 +10, 포인트 +10 획득! ✨")
             else:
                 st.error("앗! 내용과 금액을 정확히 알려주세요. 🥺")
 
@@ -397,7 +443,7 @@ with tab1:
         st.dataframe(df_income[['date', 'item', 'price', 'category']], use_container_width=True)
 
     # --- 월간 캘린더 리포트 ---
-    st.divider()
+    st.write("---")
     st.subheader("📅 월간 캘린더 리포트")
     
     # 날짜 선택
@@ -414,6 +460,26 @@ with tab1:
         df_month_exp = df_expense[(df_expense['date'].dt.year == year) & (df_expense['date'].dt.month == month)]
     else:
         df_month_exp = pd.DataFrame()
+
+    # 3. 무지출 챌린지 연속 기록 계산 (간단 버전)
+    # 현재 달의 1일부터 오늘까지 지출 없는 날 계산
+    no_spend_streak = 0
+    today_date = datetime.now().date()
+    check_date = today_date
+    
+    # 최근 30일간 기록 확인
+    while True:
+        # 해당 날짜에 지출이 있는지 확인
+        day_spent = 0
+        if not df_expense.empty:
+            day_spent = df_expense[df_expense['date'].dt.date == check_date]['price'].sum()
+        
+        if day_spent == 0:
+            no_spend_streak += 1
+            check_date -= timedelta(days=1)
+            if no_spend_streak > 30: break # 최대 30일까지만 체크
+        else:
+            break
 
     # 캘린더 스타일
     st.markdown("""
@@ -432,8 +498,12 @@ with tab1:
     .day-num { font-weight: bold; color: #555; margin-bottom: 2px; }
     .expense-text { color: #FF6B6B; font-weight: bold; font-size: 12px; }
     .good-job { font-size: 24px; margin-top: 5px; }
+    .streak-banner { background-color: #E6E6FA; padding: 10px; border-radius: 10px; text-align: center; margin-bottom: 10px; color: #6A5ACD; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
+
+    if no_spend_streak > 0:
+        st.markdown(f"<div class='streak-banner'>🔥 현재 {no_spend_streak}일째 무지출 성공 중! 대단해요!</div>", unsafe_allow_html=True)
 
     # 요일 헤더
     cols = st.columns(7)
@@ -459,7 +529,7 @@ with tab1:
                     if daily_spent > 0:
                         content += f"<div class='expense-text'>💸 -{daily_spent:,}</div>"
                     elif current_date <= datetime.now().date():
-                        content += "<div class='good-job'>😊</div>"
+                        content += "<div class='good-job'>🐷</div>" # 무지출 도장
                     st.markdown(f"<div class='day-box'>{content}</div>", unsafe_allow_html=True)
 
     # 월말 결산 및 AI 분석
@@ -726,3 +796,36 @@ with tab5:
                 <p style="color: gray; font-size: 14px;">{badge['desc']}</p>
             </div>
             """, unsafe_allow_html=True)
+
+# --- Tab 6: 랭킹 (명예의 전당) ---
+with tab6:
+    st.subheader("🏆 우리 반 명예의 전당")
+    st.write("누가누가 절약 포인트를 많이 모았을까요?")
+    
+    leaderboard_df = get_leaderboard()
+    
+    if not leaderboard_df.empty:
+        for index, row in leaderboard_df.iterrows():
+            rank = index + 1
+            r_username = row['username']
+            r_points = row['points']
+            r_xp = row['xp']
+            r_level = (r_xp // 100) + 1
+            
+            # 메달 아이콘
+            if rank == 1: medal = "🥇"
+            elif rank == 2: medal = "🥈"
+            elif rank == 3: medal = "🥉"
+            else: medal = str(rank)
+            
+            st.markdown(f"""
+            <div class="rank-card">
+                <div class="rank-num">{medal}</div>
+                <div style="flex-grow: 1;">
+                    <div style="font-size: 18px; font-weight: bold;">{r_username} <span style="font-size:14px; color:gray;">(Lv.{r_level})</span></div>
+                </div>
+                <div style="font-weight: bold; color: #FF69B4;">{r_points} P</div>
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.info("아직 랭킹 데이터가 없어요. 친구들을 초대해보세요!")
