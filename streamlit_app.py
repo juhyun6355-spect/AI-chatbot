@@ -4,6 +4,7 @@ import plotly.express as px
 import sqlite3
 from datetime import datetime, timedelta
 import calendar
+import random
 
 # --- 데이터베이스 함수 정의 ---
 def init_db():
@@ -531,25 +532,61 @@ with tab3:
     st.subheader("⚖️ 소비 밸런스 게임")
     st.write("현명한 선택을 하는 연습을 해봅시다!")
     
+    # 시나리오 리스트 정의
+    scenarios = [
+        {
+            "id": "A",
+            "situation": "용돈을 2주 동안 모았어요!",
+            "choice_a": "👟 내가 정말 갖고 싶었던 한정판 운동화 사기",
+            "choice_b": "🎁 곧 다가오는 엄마 생신 선물 사기 + 남은 돈 저축",
+            "result_a": "👟 **선택 결과:** 드디어 꿈에 그리던 운동화를 가졌어요! 친구들이 부러워하겠네요. 하지만 엄마 선물은... 정성 담긴 편지로 대신해야 할까요? (기회비용: 엄마의 감동, 저축)",
+            "result_b": "🎁 **선택 결과:** 엄마가 선물을 받고 정말 기뻐하실 거예요! 남은 돈도 저축했으니 뿌듯하네요. 운동화는 나중에 또 기회가 있겠죠? (기회비용: 한정판 운동화)"
+        },
+        {
+            "id": "B",
+            "situation": "배가 너무 고픈 하교 시간!",
+            "choice_a": "🌭 지금 당장 편의점에서 컵라면과 간식 사 먹기",
+            "choice_b": "🚲 꾹 참고 집에 가서 밥 먹고, 돈 모아서 자전거 사기",
+            "result_a": "🌭 **선택 결과:** 배고픔 해결! 당장은 행복하지만, 자전거를 사려면 돈을 다시 처음부터 모아야 해요. (기회비용: 자전거 살 돈)",
+            "result_b": "🚲 **선택 결과:** 꼬르륵 소리는 났지만, 자전거 목표에 한 걸음 더 다가갔어요! 집밥도 맛있게 먹었답니다. (기회비용: 지금 당장의 포만감)"
+        },
+        {
+            "id": "C",
+            "situation": "새 학기 학용품을 사야 해요.",
+            "choice_a": "✨ 친구들이 다 쓰는 비싸고 예쁜 '인싸' 필통",
+            "choice_b": "✏️ 튼튼하고 실용적인 필통 + 남는 돈으로 좋아하는 책 사기",
+            "result_a": "✨ **선택 결과:** 예쁜 필통 덕분에 공부할 맛이 나네요! 하지만 읽고 싶었던 책은 도서관에서 빌려봐야겠어요. (기회비용: 책 소장, 여유 자금)",
+            "result_b": "✏️ **선택 결과:** 실속 있는 소비를 했네요! 튼튼한 필통도 생기고, 재미있는 책도 읽을 수 있어요. (기회비용: 유행을 따르는 즐거움)"
+        }
+    ]
+
+    # 게임 상태 초기화 (시나리오가 없거나, 초기화 필요 시)
+    if "current_scenario" not in st.session_state:
+        st.session_state.current_scenario = random.choice(scenarios)
+        st.session_state.game_choice = None
+
+    scenario = st.session_state.current_scenario
+
     st.markdown("""
-    **상황:**  
-    용돈이 10,000원 남았는데, 두 가지 선택지 중 하나만 고를 수 있어요!
-    """)
+    <div style="background-color:#FFF9C4; padding:15px; border-radius:15px; border:2px dashed #FBC02D;">
+        <strong>🤔 오늘의 고민 상황:</strong><br>
+        {scenario['situation']}<br>
+        둘 중 <strong>하나만</strong> 선택해야 해!
+    </div>
+    <br>
+    """, unsafe_allow_html=True)
     
     col_choice1, col_choice2 = st.columns(2)
     
-    # 게임 선택 상태 관리
-    if "game_choice" not in st.session_state:
-        st.session_state.game_choice = None
-
     with col_choice1:
-        if st.button("✨ 한정판 캐릭터 카드 구매 (10,000원)"):
-            st.session_state.game_choice = "card"
+        if st.button(scenario['choice_a']):
+            st.session_state.game_choice = "A"
     with col_choice2:
-        if st.button("🎁 친구 생일선물 업그레이드 (10,000원)"):
-            st.session_state.game_choice = "gift"
+        if st.button(scenario['choice_b']):
+            st.session_state.game_choice = "B"
             
     if st.session_state.game_choice:
+        st.info("선택 완료! 아래에 이유를 적어주세요 👇")
         st.divider()
         
         # 결과 말풍선 표시 함수
@@ -561,17 +598,21 @@ with tab3:
             </div>
             """, unsafe_allow_html=True)
 
-        if st.session_state.game_choice == "card":
-            show_game_result("🦊", "<b>선택 결과:</b><br>와! 희귀한 카드를 얻어서 기분이 날아갈 것 같아! ✨<br>하지만 친구 선물은 평범한 걸로 줘야 해서 조금 미안한 마음이 들 수도 있어.<br>(잃어버린 기회: 친구가 감동받는 모습)")
+        if st.session_state.game_choice == "A":
+            show_game_result("🅰️", scenario['result_a'])
         else:
-            show_game_result("🤖", "<b>선택 결과:</b><br>친구가 선물을 받고 정말 감동할 거야! 우정이 더 반짝반짝 빛나겠지? 💖<br>하지만 갖고 싶던 카드는 포기해야 해서 조금 아쉬울 거야.<br>(잃어버린 기회: 한정판 카드)")
+            show_game_result("🅱️", scenario['result_b'])
             
         st.markdown("#### 📝 왜 그런 선택을 했니?")
-        reason = st.text_area("이유를 적어주면 미션 성공이야!", placeholder="예: 친구가 기뻐하는 게 더 좋아서...")
+        reason = st.text_area("이 선택을 하면 **가장 좋은 점**은 무엇인가요? 반대로 이 선택 때문에 **포기해야 하는 것(기회비용)**은 무엇인지 구체적으로 적어보세요.", placeholder="예: 가장 좋은 점은 ... 하지만 ...을 포기해야 해요.")
         
         if reason:
             st.balloons()
             st.success("🎉 **미션 완료!** 자신의 생각을 멋지게 설명했네! 참 잘했어! 💯")
+            if st.button("다른 문제 풀기 🔄"):
+                del st.session_state.current_scenario
+                st.session_state.game_choice = None
+                st.rerun()
 
 # --- Tab 4: 내 꿈 저금통 ---
 with tab4:
