@@ -420,23 +420,27 @@ with tab1:
     df_expense = get_expenses_db(st.session_state.username)
     df_income = get_income_db(st.session_state.username)
     
+    # 컬럼명 안전하게 통일 (price -> 금액)
+    if 'price' in df_expense.columns:
+        df_expense = df_expense.rename(columns={'price': '금액'})
+    
     if not df_expense.empty:
         col_chart1, col_chart2 = st.columns(2)
         
         with col_chart1:
             st.markdown("#### 🍩 어디에 돈을 많이 썼을까?")
-            fig1 = px.pie(df_expense, values="price", names="종류", hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel)
+            fig1 = px.pie(df_expense, values="금액", names="종류", hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel)
             st.plotly_chart(fig1, use_container_width=True)
             
         with col_chart2:
             st.markdown("#### 📊 꼭 필요한 소비였을까?")
-            fig2 = px.bar(df_expense, x="유형", y="price", color="유형", text_auto=True, color_discrete_map={"필요해요 (Need) ✅": "#4CAF50", "원해요 (Want) 💖": "#FF9800"})
+            fig2 = px.bar(df_expense, x="유형", y="금액", color="유형", text_auto=True, color_discrete_map={"필요해요 (Need) ✅": "#4CAF50", "원해요 (Want) 💖": "#FF9800"})
             st.plotly_chart(fig2, use_container_width=True)
             
         st.markdown("#### 📋 지출 내역")
-        st.dataframe(df_expense[['date', 'item', 'price', 'category', 'type']], use_container_width=True)
+        st.dataframe(df_expense[['date', 'item', '금액', 'category', 'type']], use_container_width=True)
     else:
-        st.info("아직 지출 기록이 없어요! 🎈")
+        st.info("아직 지출 기록이 없어요! 첫 기록을 남겨보세요. 🎈")
         
     if not df_income.empty:
         st.markdown("#### 📋 수입 내역")
@@ -472,7 +476,7 @@ with tab1:
         # 해당 날짜에 지출이 있는지 확인
         day_spent = 0
         if not df_expense.empty:
-            day_spent = df_expense[df_expense['date'].dt.date == check_date]['price'].sum()
+            day_spent = df_expense[df_expense['date'].dt.date == check_date]['금액'].sum()
         
         if day_spent == 0:
             no_spend_streak += 1
@@ -523,7 +527,7 @@ with tab1:
                     current_date = datetime(year, month, day).date()
                     daily_spent = 0
                     if not df_month_exp.empty:
-                        daily_spent = df_month_exp[df_month_exp['date'].dt.date == current_date]['price'].sum()
+                        daily_spent = df_month_exp[df_month_exp['date'].dt.date == current_date]['금액'].sum()
                     
                     content = f"<div class='day-num'>{day}</div>"
                     if daily_spent > 0:
@@ -534,7 +538,7 @@ with tab1:
 
     # 월말 결산 및 AI 분석
     st.markdown("### 📊 이번 달 결산")
-    total_exp_month = df_month_exp['price'].sum() if not df_month_exp.empty else 0
+    total_exp_month = df_month_exp['금액'].sum() if not df_month_exp.empty else 0
     total_inc_month = 0
     if not df_income.empty:
         df_income['date'] = pd.to_datetime(df_income['date'])
@@ -551,7 +555,7 @@ with tab1:
     prev_date = datetime(year, month, 1) - timedelta(days=1)
     prev_exp = 0
     if not df_expense.empty:
-        prev_exp = df_expense[(df_expense['date'].dt.year == prev_date.year) & (df_expense['date'].dt.month == prev_date.month)]['price'].sum()
+        prev_exp = df_expense[(df_expense['date'].dt.year == prev_date.year) & (df_expense['date'].dt.month == prev_date.month)]['금액'].sum()
     
     if prev_exp > 0:
         diff = total_exp_month - prev_exp
