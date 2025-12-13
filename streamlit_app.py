@@ -140,6 +140,10 @@ def get_income_db(username):
     conn = sqlite3.connect('money_manager.db')
     df = pd.read_sql_query("SELECT * FROM income WHERE username = ? ORDER BY date DESC", conn, params=(username,))
     conn.close()
+    
+    # 빈 데이터 처리: 데이터가 없어도 'price' 컬럼이 포함된 DataFrame 반환
+    if df.empty:
+        return pd.DataFrame(columns=['id', 'username', 'date', 'item', 'price', 'category'])
     return df
 
 def add_wishlist_db(username, item_name, target_price, image_data):
@@ -374,12 +378,12 @@ with tab1:
         
         with col_chart1:
             st.markdown("#### 🍩 어디에 돈을 많이 썼을까?")
-            fig1 = px.pie(df_expense, values="가격", names="종류", hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel)
+            fig1 = px.pie(df_expense, values="price", names="종류", hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel)
             st.plotly_chart(fig1, use_container_width=True)
             
         with col_chart2:
             st.markdown("#### 📊 꼭 필요한 소비였을까?")
-            fig2 = px.bar(df_expense, x="유형", y="가격", color="유형", text_auto=True, color_discrete_map={"필요해요 (Need) ✅": "#4CAF50", "원해요 (Want) 💖": "#FF9800"})
+            fig2 = px.bar(df_expense, x="유형", y="price", color="유형", text_auto=True, color_discrete_map={"필요해요 (Need) ✅": "#4CAF50", "원해요 (Want) 💖": "#FF9800"})
             st.plotly_chart(fig2, use_container_width=True)
             
         st.markdown("#### 📋 지출 내역")
@@ -448,7 +452,7 @@ with tab1:
                     current_date = datetime(year, month, day).date()
                     daily_spent = 0
                     if not df_month_exp.empty:
-                        daily_spent = df_month_exp[df_month_exp['date'].dt.date == current_date]['가격'].sum()
+                        daily_spent = df_month_exp[df_month_exp['date'].dt.date == current_date]['price'].sum()
                     
                     content = f"<div class='day-num'>{day}</div>"
                     if daily_spent > 0:
@@ -459,12 +463,12 @@ with tab1:
 
     # 월말 결산 및 AI 분석
     st.markdown("### 📊 이번 달 결산")
-    total_exp_month = df_month_exp['가격'].sum() if not df_month_exp.empty else 0
+    total_exp_month = df_month_exp['price'].sum() if not df_month_exp.empty else 0
     total_inc_month = 0
     if not df_income.empty:
         df_income['date'] = pd.to_datetime(df_income['date'])
         df_month_inc = df_income[(df_income['date'].dt.year == year) & (df_income['date'].dt.month == month)]
-        total_inc_month = df_month_inc['가격'].sum()
+        total_inc_month = df_month_inc['price'].sum()
     
     col_s1, col_s2, col_s3 = st.columns(3)
     col_s1.metric("총 수입", f"{total_inc_month:,}원")
@@ -476,7 +480,7 @@ with tab1:
     prev_date = datetime(year, month, 1) - timedelta(days=1)
     prev_exp = 0
     if not df_expense.empty:
-        prev_exp = df_expense[(df_expense['date'].dt.year == prev_date.year) & (df_expense['date'].dt.month == prev_date.month)]['가격'].sum()
+        prev_exp = df_expense[(df_expense['date'].dt.year == prev_date.year) & (df_expense['date'].dt.month == prev_date.month)]['price'].sum()
     
     if prev_exp > 0:
         diff = total_exp_month - prev_exp
@@ -501,12 +505,12 @@ with tab2:
         if st.button("AI 코치님, 분석해주세요! 🔍"):
             
             # 데이터 계산
-            total_spent = df['가격'].sum()
-            snack_spent = df[df['종류'] == '간식']['가격'].sum()
+            total_spent = df['price'].sum()
+            snack_spent = df[df['종류'] == '간식']['price'].sum()
             snack_ratio = (snack_spent / total_spent * 100) if total_spent > 0 else 0
             
-            wants_amount = df[df['유형'] == '원해요 (Want) 💖']['가격'].sum()
-            needs_amount = df[df['유형'] == '필요해요 (Need) ✅']['가격'].sum()
+            wants_amount = df[df['유형'] == '원해요 (Want) 💖']['price'].sum()
+            needs_amount = df[df['유형'] == '필요해요 (Need) ✅']['price'].sum()
 
             st.markdown(f"### 📊 분석 결과 (총 소비: {total_spent:,}원)")
 
@@ -574,8 +578,8 @@ with tab4:
     st.subheader("🎋 내 꿈 저금통 (Wish List)")
     
     # 현재 자산 계산
-    total_income = get_income_db(st.session_state.username)['가격'].sum()
-    total_expense = get_expenses_db(st.session_state.username)['가격'].sum()
+    total_income = get_income_db(st.session_state.username)['price'].sum()
+    total_expense = get_expenses_db(st.session_state.username)['price'].sum()
     current_savings = total_income - total_expense
     
     st.info(f"💰 현재 내가 모은 돈: **{current_savings:,}원**")
