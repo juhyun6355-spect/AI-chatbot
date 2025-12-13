@@ -584,13 +584,16 @@ with tab2:
         st.write("친구의 소비 습관을 보고 내가 칭찬이나 조언을 해줄게!")
         if st.button("AI 코치님, 분석해주세요! 🔍"):
             
+            # 컬럼 이름 통일 (Tab 1과 동일하게)
+            df = df.rename(columns={'price': '금액', 'category': '종류', 'type': '유형'})
+            
             # 데이터 계산
-            total_spent = df['price'].sum()
-            snack_spent = df[df['종류'] == '간식']['price'].sum()
+            total_spent = df['금액'].sum()
+            snack_spent = df[df['종류'] == '간식']['금액'].sum()
             snack_ratio = (snack_spent / total_spent * 100) if total_spent > 0 else 0
             
-            wants_amount = df[df['유형'] == '원해요 (Want) 💖']['price'].sum()
-            needs_amount = df[df['유형'] == '필요해요 (Need) ✅']['price'].sum()
+            wants_amount = df[df['유형'] == '원해요 (Want) 💖']['금액'].sum()
+            needs_amount = df[df['유형'] == '필요해요 (Need) ✅']['금액'].sum()
 
             st.markdown(f"### 📊 분석 결과 (총 소비: {total_spent:,}원)")
 
