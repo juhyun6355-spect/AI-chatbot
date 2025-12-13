@@ -8,7 +8,7 @@ except ImportError:
     st.stop()
 
 # Configuration
-MODEL_ID = "gemini-2.0-flash-exp"  # Try 2.0 exp first, fallback to 1.5 if not available
+MODEL_ID = "gemini-1.5-flash"
 
 st.set_page_config(page_title="Gemini Chat · Streamlit", page_icon="💬", layout="centered")
 
@@ -55,10 +55,6 @@ def call_gemini(prompt: str, api_key: str, model_name: str = MODEL_ID) -> str:
         return response.text
     except Exception as e:
         error_msg = str(e)
-        # Try fallback model if 2.0 is not available
-        if "not found" in error_msg.lower() and model_name == MODEL_ID:
-            st.warning(f"{model_name} 모델을 찾을 수 없습니다. gemini-1.5-flash로 재시도합니다...")
-            return call_gemini(prompt, api_key, "gemini-1.5-flash")
         raise RuntimeError(f"API 오류: {error_msg}")
 
 
@@ -81,8 +77,8 @@ if test_btn:
 with st.expander("모델 선택", expanded=False):
     model_option = st.selectbox(
         "사용할 모델",
-        ["gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-1.5-pro"],
-        help="gemini-2.0-flash-exp를 먼저 시도하고, 없으면 자동으로 gemini-1.5-flash로 대체됩니다."
+        ["gemini-1.5-flash", "gemini-1.5-pro"],
+        help="사용할 Gemini 모델을 선택합니다."
     )
 
 st.subheader("채팅", divider="gray")
@@ -104,4 +100,3 @@ for msg in st.session_state.messages:
     st.chat_message("assistant" if msg["role"] != "user" else "user").write(msg["content"])
 
 st.caption("API 키는 클라이언트에서만 사용되며 서버에 저장되지 않습니다.")
-
