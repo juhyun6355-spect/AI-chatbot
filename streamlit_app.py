@@ -9,54 +9,60 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- 커스텀 CSS 및 폰트 설정 (아기자기한 디자인) ---
-st.markdown("""
+# --- 사이드바: 테마 설정 ---
+with st.sidebar:
+    st.header("🎨 디자인 설정")
+    st.write("나만의 테마 색깔을 골라보세요!")
+    theme_color = st.color_picker("메인 테마 색상", "#FFB6C1") # 기본값: 파스텔 핑크
+
+# --- 커스텀 CSS 및 폰트 설정 (동적 테마 적용) ---
+st.markdown(f"""
     <style>
     /* 구글 폰트 'Jua' 불러오기 */
     @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
 
     /* 전체 폰트 적용 */
-    html, body, [class*="css"] {
+    html, body, [class*="css"] {{
         font-family: 'Jua', sans-serif;
-    }
+    }}
 
     /* 배경색: 따뜻한 크림색 */
-    .stApp {
+    .stApp {{
         background-color: #FFFDF5;
-    }
+    }}
 
     /* 버튼 디자인: 둥글고 입체적인 사탕 느낌 */
-    .stButton > button {
-        background-color: #FFB6C1; /* 파스텔 핑크 */
+    .stButton > button {{
+        background-color: {theme_color};
         color: white;
         border-radius: 25px;
         border: none;
         padding: 10px 24px;
         font-size: 18px;
-        box-shadow: 0 4px 0 #FF69B4; /* 그림자 */
+        box-shadow: 0 4px 0 rgba(0,0,0,0.1);
         transition: all 0.2s;
-    }
-    .stButton > button:hover {
-        background-color: #FF69B4;
+    }}
+    .stButton > button:hover {{
+        filter: brightness(90%);
         transform: scale(1.05); /* 살짝 커짐 */
         color: white;
-    }
-    .stButton > button:active {
+    }}
+    .stButton > button:active {{
         box-shadow: none;
         transform: translateY(4px); /* 눌리는 효과 */
-    }
+    }}
 
     /* 입력창 둥글게 */
-    .stTextInput > div > div > input, .stNumberInput > div > div > input {
+    .stTextInput > div > div > input, .stNumberInput > div > div > input {{
         border-radius: 15px;
-        border: 2px solid #B3E5FC;
-    }
+        border: 2px solid {theme_color};
+    }}
     
     /* 탭 디자인 */
-    .stTabs [data-baseweb="tab-list"] {
+    .stTabs [data-baseweb="tab-list"] {{
         gap: 10px;
-    }
-    .stTabs [data-baseweb="tab"] {
+    }}
+    .stTabs [data-baseweb="tab"] {{
         height: 50px;
         white-space: pre-wrap;
         background-color: #E1F5FE;
@@ -64,27 +70,28 @@ st.markdown("""
         gap: 1px;
         padding-top: 10px;
         padding-bottom: 10px;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #B3E5FC;
+    }}
+    .stTabs [aria-selected="true"] {{
+        background-color: {theme_color};
+        color: white !important;
         font-weight: bold;
-    }
+    }}
 
     /* 말풍선 스타일 정의 */
-    .chat-container {
+    .chat-container {{
         display: flex;
         align-items: flex-start;
         margin-bottom: 15px;
-    }
-    .ai-bubble {
-        background-color: #E0F7FA; /* 파스텔 블루 */
-        color: #006064;
+    }}
+    .ai-bubble {{
+        background-color: {theme_color};
+        color: #333333;
         padding: 15px;
         border-radius: 0 20px 20px 20px;
         box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
         margin-left: 10px;
         font-size: 18px;
-    }
+    }}
     </style>
 """, unsafe_allow_html=True)
 
