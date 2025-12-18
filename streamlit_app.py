@@ -8,6 +8,9 @@ import random
 
 # --- 데이터베이스 함수 정의 ---
 def init_db():
+    #앱 실행 시 필요한 데이터베이스와 테이블(사용자, 소비 기록, 위시리스트)을 자동으로 생성한다. 
+    #'money_manager.db' 파일이 생성되고, 사용자가 입력한 데이터를 영구적으로 저장할 공간이 생긴다.
+    
     conn = sqlite3.connect('money_manager.db')
     c = conn.cursor()
     # 사용자 테이블 (닉네임, 비밀번호)
@@ -31,6 +34,8 @@ def init_db():
                   image_data BLOB)''')
     
     # 게이미피케이션을 위한 컬럼 추가 (기존 DB 호환성 유지)
+    # 게이미피케이션(XP, 포인트, 스트릭) 기능을 위해 기존 DB 구조를 업데이트한다.
+    # 기존에 앱을 쓰던 사용자도 데이터 손실 없이 새로운 게임 요소(레벨업 등)를 즐길 수 있도록 한다.
     try:
         c.execute("ALTER TABLE users ADD COLUMN last_active_date TEXT")
     except sqlite3.OperationalError: pass
@@ -51,6 +56,8 @@ def init_db():
     conn.close()
 
 def login_user(username, pin):
+    #로그인 및 자동 회원가입 로직을 처리한다. 
+    #DB에 없는 닉네임이면 자동으로 가입시켜 초등학생들이 복잡한 절차 없이 바로 앱을 사용할 수 있게 한다.
     conn = sqlite3.connect('money_manager.db')
     c = conn.cursor()
     c.execute('SELECT pin FROM users WHERE username = ?', (username,))
@@ -68,6 +75,8 @@ def login_user(username, pin):
         return True, "새로운 친구 환영해요! 가입이 완료되었어요!"
 
 def update_user_activity(username, xp_gain=10, points_gain=10):
+    #사용자가 소비를 기록할 때마다 보상(XP, 포인트)을 지급하고 연속 접속일(Streak)을 계산한다.
+    #'정의적 비계'로서 학생들에게 지속적인 학습 동기를 부여한다.
     """활동 기록 시 스트릭, 경험치, 포인트 업데이트"""
     conn = sqlite3.connect('money_manager.db')
     c = conn.cursor()
@@ -103,6 +112,7 @@ def update_user_activity(username, xp_gain=10, points_gain=10):
     conn.close()
 
 def get_user_stats(username):
+    #사용자의 현재 레벨과 랭킹 정보를 표시하기 위해 DB에서 데이터를 조회한다.
     conn = sqlite3.connect('money_manager.db')
     c = conn.cursor()
     c.execute('SELECT streak_days, xp, points FROM users WHERE username = ?', (username,))
@@ -111,6 +121,7 @@ def get_user_stats(username):
     return result if result else (0, 0, 0)
 
 def get_leaderboard():
+    #사회적 모델링를 통해 포인트가 높은 상위 5명의 친구 목록을 가져온다.
     conn = sqlite3.connect('money_manager.db')
     # 포인트 순으로 상위 5명 조회
     df = pd.read_sql_query("SELECT username, xp, points FROM users ORDER BY points DESC LIMIT 5", conn)
@@ -118,6 +129,7 @@ def get_leaderboard():
     return df
 
 def add_expense_db(username, date, item, price, category, type_val):
+    #소비 내역(날짜, 항목, 금액, Need/Want 여부)을 DB에 저장하고 보상을 지급한다.
     conn = sqlite3.connect('money_manager.db')
     c = conn.cursor()
     c.execute('INSERT INTO expenses (username, date, item, price, category, type) VALUES (?, ?, ?, ?, ?, ?)',
@@ -127,12 +139,14 @@ def add_expense_db(username, date, item, price, category, type_val):
     update_user_activity(username, xp_gain=10, points_gain=10) # 활동 업데이트
 
 def get_expenses_db(username):
+    # 사용자의 모든 소비 기록을 최신순으로 가져와 시각화(Tab 1) 및 AI 분석(Tab 2)에 사용한다.
     conn = sqlite3.connect('money_manager.db')
     df = pd.read_sql_query("SELECT * FROM expenses WHERE username = ? ORDER BY date DESC", conn, params=(username,))
     conn.close()
     return df
 
 def add_wishlist_db(username, item_name, target_price, image_data):
+    # '내 꿈 저금통(Tab 4)'에 목표 물건을 저장한다. (단순화를 위해 기존 목표 덮어쓰기를 한다.)
     conn = sqlite3.connect('money_manager.db')
     c = conn.cursor()
     # 목표는 하나만 설정 가능하도록 기존 목표 삭제 (심플 버전)
@@ -154,6 +168,7 @@ def get_wishlist_db(username):
 init_db()
 
 # 페이지 기본 설정
+# 브라우저 탭 이름과 아이콘을 설정하고, 레이아웃을 넓게(wide) 사용하여 시각화 효과를 높인다.
 st.set_page_config(
     page_title="Money Manager",
     page_icon="💰",
@@ -161,6 +176,8 @@ st.set_page_config(
 )
 
 # --- 사이드바: 테마 설정 ---
+# 딱딱한 기본 UI 대신, 학생들에게 친숙한 'Jua' 폰트와 둥근 모서리 디자인을 적용한다.
+# 사용자가 선택한 테마 색상이 버튼과 입력창에 실시간으로 반영되어 앱에 애착을 갖게 한다. 
 with st.sidebar:
     st.header("🎨 디자인 설정")
     st.write("나만의 테마 색깔을 골라보세요!")
@@ -270,7 +287,7 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "username" not in st.session_state:
     st.session_state.username = ""
-
+# 보안 및 데이터 프라이버시를 위해 세션 상태를 확인하여 비로그인 사용자의 접근을 차단한다. 
 if not st.session_state.logged_in:
     st.title("🔐 머니 매니저 로그인")
     st.markdown("### 내 용돈 기입장을 열어볼까요?")
@@ -304,6 +321,8 @@ user_level = (user_xp // 100) + 1 # 100XP 마다 레벨업
 next_level_xp = 100 - (user_xp % 100)
 
 # 1. 내 캐릭터 키우기 (성장 시스템)
+# 사용자의 레벨(XP)에 따라 캐릭터가 알->병아리->닭으로 진화하는 모습을 보여준다.
+# '키우기 게임' 요소를 통해 학생들이 앱을 지속적으로 사용하도록 동기를 부여한다.
 if user_level < 3:
     char_icon = "🥚"
     level_title = "아직은 알"
@@ -349,6 +368,7 @@ with st.sidebar:
     st.write(f"**💰 절약 포인트:** {user_points} P")
 
 # 탭 구성
+# [목적] 6가지 핵심 활동(기록, 분석, 게임, 목표, 보상, 랭킹)을 탭으로 분리하여 학습 흐름을 체계화한다.
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(["📊 마이 데이터 보드", "🤖 AI 머니 코치", "⚖️ 소비 밸런스 게임", "🎋 내 꿈 저금통", "🏆 나의 트로피", "👑 랭킹"])
 
 # --- Tab 1: 마이 데이터 보드 ---
@@ -356,6 +376,7 @@ with tab1:
     st.subheader("📝 용돈기입장")
     
     # 입력 폼
+    # 학생이 스스로 Need(필요)와 Want(욕구)를 판단하여 입력하게 함으로써 메타인지 능력을 기른다.
     with st.form("input_form", clear_on_submit=True):
         col1, col2 = st.columns(2)
         with col1:
@@ -396,11 +417,13 @@ with tab1:
         
         with col_chart1:
             st.markdown("#### 🍩 어디에 돈을 많이 썼을까?")
+            # Plotly 도넛 차트를 통해 어떤 종류(간식 등)에 돈이 편중되었는지 직관적으로 보여준다.
             fig1 = px.pie(df_expense, values="금액", names="종류", hole=0.4, color_discrete_sequence=px.colors.qualitative.Pastel)
             st.plotly_chart(fig1, use_container_width=True)
             
         with col_chart2:
             st.markdown("#### 📊 꼭 필요한 소비였을까?")
+            # Plotly 막대 차트를 통해 Need와 Want의 비율을 한눈에 비교하여 합리적 소비 여부를 진단한다.
             fig2 = px.bar(df_expense, x="유형", y="금액", color="유형", text_auto=True, color_discrete_map={"필요해요 (Need) ✅": "#4CAF50", "원해요 (Want) 💖": "#FF9800"})
             st.plotly_chart(fig2, use_container_width=True)
             
@@ -429,7 +452,8 @@ with tab1:
         df_month_exp = pd.DataFrame()
 
     # 3. 무지출 챌린지 연속 기록 계산 (간단 버전)
-    # 현재 달의 1일부터 오늘까지 지출 없는 날 계산
+    # 현재 달의 1일부터 오늘까지 지출 없는 날 계산한다.
+    # 최근 지출 없는 날(No Spend Days)을 계산하여 절약 습관을 칭찬한다.
     no_spend_streak = 0
     today_date = datetime.now().date()
     check_date = today_date
@@ -479,6 +503,7 @@ with tab1:
         cols[i].markdown(f"<div style='text-align: center; font-weight: bold; color: #555;'>{day}</div>", unsafe_allow_html=True)
 
     # 달력 그리기
+    # HTML/CSS를 활용해 소비가 있는 날은 금액을, 없는 날은 '돼지 아이콘'을 표시하여 소비 패턴을 시각화한다.
     cal = calendar.monthcalendar(year, month)
     for week in cal:
         cols = st.columns(7)
@@ -546,6 +571,8 @@ with tab2:
             needs_amount = df[df['유형'] == '필요해요 (Need) ✅']['금액'].sum()
 
             st.markdown(f"### 📊 분석 결과 (총 소비: {total_spent:,}원)")
+            # Rule-based 알고리즘을 사용해 간식비 40% 초과 등 특정 조건 만족 시 맞춤형 피드백을 제공한다.
+            # 초등학생이 이해하기 쉽도록 색상 카드(초록/빨강)와 아이콘으로 즉각적인 피드백을 준다.
 
             # Rule 1: 간식 비율 체크
             if snack_ratio > 40:
@@ -563,7 +590,7 @@ with tab2:
 with tab3:
     st.subheader("⚖️ 소비 밸런스 게임")
     st.write("현명한 선택을 하는 연습을 해봅시다!")
-    
+    # 학생들의 흥미를 끌 수 있는 딜레마 시나리오를 정의한다.
     # 시나리오 리스트 정의
     scenarios = [
         {
@@ -636,6 +663,7 @@ with tab3:
             show_game_result("🅱️", scenario['result_b'])
             
         st.markdown("#### 📝 왜 그런 선택을 했니?")
+        # 학생이 선택에 대한 이유와 기회비용을 직접 글로 적어보게 하여 의사결정 과정을 내면화한다.
         reason = st.text_area("이 선택을 하면 **가장 좋은 점**은 무엇인가요? 반대로 이 선택 때문에 **포기해야 하는 것(기회비용)**은 무엇인지 구체적으로 적어보세요.", placeholder="예: 가장 좋은 점은 ... 하지만 ...을 포기해야 해요.")
         
         if reason:
@@ -654,7 +682,8 @@ with tab4:
     
     # 목표 가져오기
     wish = get_wishlist_db(st.session_state.username)
-    
+
+    # 위시리스트가 있으면 목표 카드(이미지, 가격)를 보여주어 '자원의 희소성'을 시각화한다.
     if wish:
         # 목표가 있을 때
         item_name = wish[2]
@@ -700,6 +729,7 @@ with tab5:
     st.write("열심히 활동해서 멋진 배지를 모아보세요!")
     
     # 배지 획득 조건 체크
+    # 사용자 데이터(Streak, XP)를 확인하여 특정 조건 달성 시 배지를 해제한다.
     badges = []
     
     # 1. 기록왕 (7일 연속)
@@ -740,6 +770,7 @@ with tab6:
     leaderboard_df = get_leaderboard()
     
     if not leaderboard_df.empty:
+        # 포인트가 높은 상위 친구들의 명단을 카드로 보여주어 건전한 경쟁과 사회적 학습을 유도한다.
         for index, row in leaderboard_df.iterrows():
             rank = index + 1
             r_username = row['username']
